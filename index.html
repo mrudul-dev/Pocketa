@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101827">
+<title>Pocketa . Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="tailwind.css">
+<link rel="stylesheet" href="date-time-picker.css">
+<style>
+.note-input{color-scheme:dark}
+.note-field{position:relative}
+.note-field:focus-within{z-index:30}
+.note-suggestions{background:#171719;border:1px solid #343438;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.35);left:0;max-height:190px;overflow-y:auto;position:absolute;right:0;top:calc(100% + 5px);z-index:50}
+.note-suggestions.hidden{display:none}
+.note-suggestion-option{background:transparent;border:0;border-radius:0;color:#e9e9ec;cursor:pointer;display:block;font-size:13px;padding:10px 12px;text-align:left;width:100%}
+.note-suggestion-option:hover,.note-suggestion-option:focus{background:#29292d;color:#fff;outline:none}
+#itemForm.form-grid{grid-template-columns:minmax(0,1.8fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr)}
+@media(max-width:700px){#itemForm.form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#itemForm.form-grid button[type=submit]{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo">&#8377;</div><div><h1>Pocketa</h1><p>Your Personal Expense Tracker</p></div></div>
+    <div class="top-actions">
+      <div class="header-icon-actions gap-1">
+        <button class="btn icon-btn notification-trigger" id="remindersBtn" aria-label="Reminders and notifications" title="Reminders and notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span id="notificationBadge" class="notification-badge hidden" aria-live="polite"></span></button>
+        <button class="btn icon-btn" id="downloadBtn" aria-label="Data management" title="Data management"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button>
+        <button class="btn icon-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <button class="active" data-tab="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+    <button data-tab="daily"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="9"/></svg><span>Daily</span></button>
+    <button data-tab="monthly"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Monthly</span></button>
+    <button data-tab="items"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="10" cy="17" r="1"/></svg><span>Items</span></button>
+    <button data-tab="reports"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17"/><path d="m7 15 4-4 3 2 5-7"/></svg><span>Reports</span></button>
+  </nav>
+
+  <main>
+    <section id="tab-overview">
+      <div class="dashboard-heading overview-dashboard-heading">
+        <div><div class="eyebrow">Your Finances</div><h2>Overview</h2></div>
+        <div class="overview-actions">
+          <button class="btn icon-btn overview-filter-btn" id="filterBtn" aria-label="Open filters" title="Filters" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M7 12h10m-7 5h4"/><circle cx="8" cy="7" r="1"/><circle cx="14" cy="12" r="1"/><circle cx="11" cy="17" r="1"/></svg></button>
+          <div class="period-toggle overview-period-toggle" role="group" aria-label="Spending period"><button type="button" data-period="today">Today</button><button class="active" type="button" data-period="month">This Month</button></div>
+          <button class="btn primary overview-add-btn" type="button" data-open-expense><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Expense</span></button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat primary-stat"><div class="label" id="spentLabel">Total expenses</div><div class="value" id="sSpent">&#8377;0</div><div class="hint" id="sSpentHint">Across all items</div></div>
+        <div class="stat"><div class="label">Monthly budget</div><div class="value" id="sTarget">&#8377;0</div><div class="hint">Total of item budgets</div></div>
+        <div class="stat green" id="remainingCard"><div class="label">Remaining budget</div><div class="value" id="sRemaining">&#8377;0</div><div class="hint">Budget minus spending</div></div>
+        <div class="stat" id="extraCard"><div class="label">Extra expenses</div><div class="value" id="sExtra">&#8377;0</div><div class="hint">Above category targets</div></div>
+      </div>
+      <section class="panel budget-total-panel"><div class="budget-total-head"><div><div class="label">Monthly budget used</div><strong id="budgetProgressLabel">&#8377;0 of &#8377;0</strong></div><span class="pill" id="budgetProgressPct">0%</span></div><div class="bar budget-total-bar"><span id="budgetProgressBar"></span></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>Budget by expense item</h2><div class="sub" id="budgetSubtitle">Monthly Target vs actual spending</div></div></div><div class="budget-list" id="budgetList"></div><div id="budgetMessage" class="status-message"></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>Recent expenses</h2><div class="sub">Latest entries for the selected month</div></div><button class="btn small" data-goto="daily">View all</button></div><div id="recentList"></div></section>
+    </section>
+
+    <section id="tab-daily" class="hidden">
+      <div class="dashboard-heading"><div><div class="eyebrow">Your activity</div><h2>Daily Entry</h2></div><button class="btn primary overview-add-btn" type="button" data-open-expense><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add Expense</span></button></div>
+      <section class="panel"><div class="panel-head"><div><h2>Transactions</h2><div class="sub">Search and manage your expenses</div></div></div><div class="transaction-tools"><div class="transaction-search"><svg class="transaction-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="entrySearch" type="search" placeholder="Search transactions..." aria-label="Search transactions"></div><div class="date-input-wrap"><input id="entryDateFilter" type="text" inputmode="none" readonly aria-label="Filter by date" placeholder="Select Date"><svg class="date-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><button id="clearEntryFilters" class="btn small" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg><span>Clear</span></button></div><div id="entryList"></div></section>
+    </section>
+
+    <section id="tab-monthly" class="hidden">
+      <div class="dashboard-heading">
+        <div><div class="eyebrow">Budget tracker</div><h2>Monthly Breakdown</h2></div>
+        <span class="pill neutral" id="daysLabel">31 days</span>
+      </div>
+      <section class="panel">
+        <div class="panel-head"><div class="sub">Tap any day to add or update an amount</div></div>
+        <div class="month-summary-strip">
+          <div class="summary-stat"><span class="label">Budget</span><strong class="value" id="monthBudgetTotal">&#8377;0</strong><span class="hint">Total Monthly Targets</span></div>
+          <div class="summary-stat primary-stat"><span class="label">Spent</span><strong class="value" id="monthSpentTotal">&#8377;0</strong><span class="hint">Recorded this month</span></div>
+          <div class="summary-stat remaining-stat"><span class="label">Remaining</span><strong class="value" id="monthRemainingTotal">&#8377;0</strong><span class="hint">Budget less spending</span></div>
+          <div class="summary-stat extra-stat"><span class="label">Extra</span><strong class="value" id="monthExtraTotal">&#8377;0</strong><span class="hint">Above category targets</span></div>
+        </div>
+        <div class="day-grid" id="dayGrid"></div>
+        <div class="sub mt-[10px]">On mobile, swipe the days horizontally within each category.</div>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>Daily category tracking</h2><div class="sub">Swipe through days and tap to enter amounts</div></div></div><div id="mobileDayView"></div></section>
+    </section>
+
+    <section id="tab-items" class="hidden">
+      <div class="dashboard-heading"><div><div class="eyebrow">Your items</div><h2>Manage Expense Items</h2></div></div>
+      <section class="panel"><div class="panel-head"><div class="sub">Create your own categories and set a target for the selected month and year</div></div>
+        <form id="itemForm" class="form-grid">
+          <div class="field"><label for="newExpenseItem">Expense Item</label><input id="newExpenseItem" list="expenseItemOptions" placeholder="Select or type an expense item" maxlength="35" required><datalist id="expenseItemOptions"></datalist></div>
+          <div class="field"><label for="newItemName">Note</label><input id="newItemName" placeholder="e.g. Shop name" maxlength="80"></div>
+          <div class="field"><label for="newItemTarget"><span class="desktop-target-label">Monthly Target</span><span class="mobile-target-label">Target</span></label><div class="currency-input-wrap"><input id="newItemTarget" type="number" min="0" step="0.01" placeholder="4000" required><span class="currency-symbol" aria-hidden="true">&#8377;</span></div></div>
+          <button class="btn primary" type="submit">Add Item</button>
+        </form>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h2>Your expense items</h2><div class="sub">Change a target for the selected month; items remain available in other months</div></div></div><div id="itemList"></div></section>
+      <div class="note">Suggestion: keep categories practical and distinct, such as Groceries, Food & Dining, Fuel, Bills, Shopping, Health, Rent and Family. You can add more whenever needed.</div>
+    </section>
+
+    <section id="tab-reports" class="hidden">
+      <div class="dashboard-heading"><div><div class="eyebrow">Insights</div><h2>Reports</h2></div><button class="month-select" type="button" data-open-filters><span id="reportYearLabel"></span><svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></div>
+      <div class="stats">
+        <div class="stat"><div class="label">Yearly budget</div><div class="value" id="rTarget">&#8377;0</div><div class="hint">Sum of Monthly Targets</div></div>
+        <div class="stat primary-stat"><div class="label">Yearly spent</div><div class="value" id="rSpent">&#8377;0</div><div class="hint">All recorded expenses</div></div>
+        <div class="stat green"><div class="label">Yearly balance</div><div class="value" id="rBalance">&#8377;0</div><div class="hint">Budget less actual spending</div></div>
+        <div class="stat red"><div class="label">Yearly overspend</div><div class="value" id="rExtra">&#8377;0</div><div class="hint">Sum of monthly item overspends</div></div>
+      </div>
+      <section class="panel"><div class="panel-head"><div><h2>Monthly spending trend</h2><div class="sub">Spending and budget across the selected year</div></div></div><div class="chart-legend"><span><i class="legend-budget"></i>Budget</span><span><i class="legend-spent"></i>Spent</span></div><div id="yearChart" class="year-chart"></div><div class="report-highlights" id="yearHighlights"></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>This month at a glance</h2><div class="sub" id="monthAnalyticsLabel"></div></div></div><div class="report-highlights" id="monthHighlights"></div><div id="dailyTrend" class="daily-trend"></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>Month-wise report</h2><div class="sub">All 12 months for the selected year</div></div></div><div id="yearReport"></div></section>
+      <section class="panel"><div class="panel-head"><div><h2>Expense item report</h2><div class="sub">Spending by item for the selected year</div></div></div><div id="itemReport"></div></section>
+    </section>
+  </main>
+  <div class="footer">Pocketa . Data is saved in this browser on this device. Export a backup regularly.</div>
+</div>
+
+<div id="filterModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="filterModalTitle">
+  <div class="modal">
+    <div class="dialog-heading"><h3 id="filterModalTitle">Filter expenses</h3><button class="btn" type="button" data-close-modal aria-label="Close filters">&times;</button></div>
+    <div class="field mt-[14px]"><label for="yearFilter">Year</label><select id="yearFilter"></select></div>
+    <div class="field mt-[10px]"><label for="monthFilter">Month</label><select id="monthFilter"></select></div>
+    <div class="field mt-[10px]"><label for="itemFilter">Expense item</label><select id="itemFilter"><option value="all">All items</option></select></div>
+    <div id="filterNewItemField" class="field mt-[10px] hidden"><label for="filterNewItem">Add Expense Item</label><input id="filterNewItem" maxlength="35" placeholder="Enter expense item"></div>
+    <div class="field mt-[10px]"><label for="dateFilter">Specific date</label><div class="date-input-wrap"><input id="dateFilter" type="text" inputmode="none" readonly placeholder="Select date"><svg class="date-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div></div>
+    <div class="modal-actions"><button class="btn" id="todayBtn" type="button">Current month</button><button class="btn primary" id="filterDone" type="button">Done</button></div>
+  </div>
+</div>
+<div id="notificationsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="notificationsTitle">
+  <div class="modal settings-modal">
+    <div class="dialog-heading"><h3 id="notificationsTitle">View In-App Notifications</h3><button class="btn" type="button" data-close-modal aria-label="Close notifications">&times;</button></div>
+    <div id="notificationList" class="notification-list mt-3 grid gap-2" aria-live="polite"></div>
+    <div class="modal-actions"><button class="btn" id="manageReminders" type="button">Manage Reminders</button><button class="btn" id="clearNotifications" type="button">Clear Notifications</button></div>
+  </div>
+</div>
+<div id="remindersModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="remindersTitle">
+  <div class="modal settings-modal reminders-modal">
+    <div class="dialog-heading"><h3 id="remindersTitle">Reminders</h3><button class="btn" type="button" data-close-modal aria-label="Close reminders">&times;</button></div>
+    <p class="sub">Reminders run while this app is open. They may not fire if you close the browser or device.</p>
+    <div id="remindersWorkspace" class="reminders-workspace">
+    <form id="reminderForm" class="grid grid-cols-2 gap-2">
+      <div class="field col-span-full min-w-0"><label for="reminderTitle">Reminder Title</label><input id="reminderTitle" type="text" maxlength="120" placeholder="Enter a reminder title" required></div>
+      <div class="field col-span-full min-w-0"><label for="reminderFrequency">Frequency</label><select id="reminderFrequency"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+      <div id="reminderWeekdayField" class="field col-span-full min-w-0 hidden"><label for="reminderWeekday">Day of week</label><select id="reminderWeekday"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>
+      <div class="field min-w-0"><label for="reminderDate">Date</label><div class="date-input-wrap"><input id="reminderDate" type="text" inputmode="none" readonly placeholder="Select date" aria-label="Reminder start date" required><svg class="date-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div></div>
+      <div class="field min-w-0"><label for="reminderTimeDisplay">Time</label><input id="reminderTime" type="hidden" value="20:00"><button id="reminderTimeDisplay" class="time-picker-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="timePickerPopover"><span id="reminderTimeLabel">08:00 PM</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button></div>
+      <div class="field col-span-full min-w-0"><button id="saveReminder" class="btn primary min-h-[44px]" type="submit">Add Reminder</button><button id="cancelReminderEdit" class="btn hidden" type="button">Cancel Edit</button></div>
+    </form>
+    <section class="reminder-list-panel" aria-labelledby="reminderListTitle">
+      <h4 id="reminderListTitle">Your reminders</h4>
+      <div id="reminderList" class="reminder-list-scroll"></div>
+    </section>
+    </div>
+  </div>
+</div>
+<div id="dataModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="dataTitle">
+  <div class="modal settings-modal">
+    <div class="dialog-heading"><h3 id="dataTitle">Data management</h3><button class="btn" type="button" data-close-modal aria-label="Close data management">&times;</button></div>
+    <p class="sub">Export expense records or back up all data stored on this device.</p>
+    <div class="data-actions mt-4 grid gap-2">
+      <button class="btn data-action" id="exportCsv" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span><strong>Export CSV</strong><small>Download expense records for the selected period</small></span></button>
+      <button class="btn data-action" id="backupBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span><strong>Back up data</strong><small>Export expenses, categories, targets, and settings</small></span></button>
+      <button class="btn data-action" id="restoreBtn" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5M12 16V8m-3 3 3-3 3 3"/></svg><span><strong>Restore backup</strong><small>Choose a JSON backup to replace saved data</small></span></button>
+    </div>
+    <input type="file" id="restoreFile" accept="application/json,.json" class="hidden">
+  </div>
+</div>
+<div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal settings-modal">
+    <div class="dialog-heading"><h3 id="settingsTitle">Settings</h3><button class="btn" type="button" data-close-modal aria-label="Close settings">&times;</button></div>
+    <p class="sub">Your data is stored locally on this device and works offline.</p>
+    <section class="mt-3 border-t border-[#343438] pt-3" aria-label="Notification and sound settings">
+      <label class="setting-row flex items-center justify-between gap-3 py-2 text-xs text-[#e5e5e7]" for="notificationsToggle"><span>Browser notifications</span><input id="notificationsToggle" class="h-[18px] w-[18px] accent-mint" type="checkbox"></label>
+      <p class="my-1.5 text-[11px] leading-[1.45] text-[#99999f]">Permission is requested only when you turn this on. In-app notifications work without browser permission.</p>
+      <label class="setting-row flex items-center justify-between gap-3 py-2 text-xs text-[#e5e5e7]" for="soundToggle"><span>Play sounds for reminders and budget warnings</span><input id="soundToggle" class="h-[18px] w-[18px] accent-mint" type="checkbox"></label>
+      <button class="btn small" id="soundPreview" type="button">Preview sound</button>
+    </section>
+  </div>
+</div>
+<div id="addExpenseModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="addExpenseTitle">
+  <div class="modal dialog-wide">
+    <div class="dialog-heading"><h3 id="addExpenseTitle">Add expense</h3><button class="btn" type="button" data-close-modal aria-label="Close add expense form">&times;</button></div>
+    <form id="expenseForm" class="form-grid mt-4">
+      <div class="field"><label for="expenseDate">Date</label><div class="date-input-wrap"><input type="text" id="expenseDate" inputmode="none" readonly placeholder="Select date" required><svg class="date-calendar-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div></div>
+      <div class="field"><label for="expenseItem">Expense item</label><select id="expenseItem" required></select></div>
+      <div id="expenseNewItemField" class="field hidden"><label for="expenseNewItem">Add Expense Item</label><input id="expenseNewItem" maxlength="35" placeholder="Enter expense item"></div>
+      <div class="field"><label for="expenseAmount">Amount (&#8377;)</label><input type="number" id="expenseAmount" min="0.01" step="0.01" placeholder="0.00" required></div>
+      <div class="field note-field"><label for="expenseNote">Note (optional)</label><input class="note-input" id="expenseNote" maxlength="80" placeholder="e.g. Shop name"></div>
+      <div class="modal-actions wide"><button class="btn" type="button" data-close-modal>Cancel</button><button class="btn primary" type="submit">Save Expense</button></div>
+    </form>
+  </div>
+</div>
+<div id="editModal" class="modal-backdrop hidden">
+  <div class="modal"><div class="dialog-heading"><h3 id="modalTitle">Update daily amount</h3><button class="btn" type="button" data-close-modal aria-label="Close update daily amount">&times;</button></div><div class="sub" id="modalSubtitle"></div>
+    <div class="field mt-[14px]"><label for="modalItem">Expense item</label><select id="modalItem"></select></div>
+    <div id="modalNewItemField" class="field mt-[10px] hidden"><label for="modalNewItem">Add Expense Item</label><input id="modalNewItem" maxlength="35" placeholder="Enter expense item"></div>
+    <div class="field mt-[10px]"><label for="modalAmount">Amount (&#8377;)</label><input id="modalAmount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+    <div class="field note-field mt-[10px]"><label for="modalNote">Note (optional)</label><input class="note-input" id="modalNote" maxlength="80" placeholder="Add a note"></div>
+    <div class="modal-actions"><button class="btn" id="modalCancel">Cancel</button><button class="btn primary" id="modalSave">Save</button></div>
+  </div>
+</div>
+<div id="renameItemModal" class="modal-backdrop rename-item-modal hidden" role="dialog" aria-modal="true" aria-labelledby="renameItemTitle">
+  <div class="modal">
+    <div class="dialog-heading"><h3 id="renameItemTitle"></h3><button class="btn" type="button" data-close-modal aria-label="Close edit item dialog">&times;</button></div>
+    <form id="renameItemForm">
+      <div class="field"><label for="renameItemInput">Item name</label><input id="renameItemInput" maxlength="35" required></div>
+      <div class="modal-actions"><button class="btn primary" type="submit">Submit</button></div>
+    </form>
+  </div>
+</div>
+<div id="removeItemModal" class="modal-backdrop remove-item-modal hidden" role="dialog" aria-modal="true" aria-labelledby="removeItemTitle" aria-describedby="removeItemMessage">
+  <div class="modal">
+    <div class="dialog-heading"><div class="remove-item-heading"><span class="remove-item-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6"/></svg></span><h3 id="removeItemTitle">Remove Item?</h3></div><button class="btn" type="button" data-cancel-remove-item aria-label="Close remove item confirmation">&times;</button></div>
+    <p id="removeItemMessage" class="sub">Are you sure you want to remove this item? This action cannot be undone.</p>
+    <div class="modal-actions"><button class="btn" type="button" data-cancel-remove-item>Cancel</button><button class="btn confirm-remove-btn" type="button" id="confirmRemoveItem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v6m4-6v6"/></svg>Remove</button></div>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+<div id="calendarPopover" class="calendar-popover hidden" role="dialog" aria-label="Choose a date"></div>
+<div id="timePickerPopover" class="time-picker-popover hidden" role="dialog" aria-label="Choose a reminder time"></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id), months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const today=new Date(), currentYear=today.getFullYear(), currentMonth=today.getMonth()+1;
+const amountText=n=>(Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});
+const money=n=>"\u20B9"+amountText(n);
+const dateKey=(y,m,d)=>`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+const localDateKey=date=>dateKey(date.getFullYear(),date.getMonth()+1,date.getDate());
+const isDateKey=value=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(value||""))return false;let [year,month,day]=value.split("-").map(Number),date=new Date(year,month-1,day);return date.getFullYear()===year&&date.getMonth()===month-1&&date.getDate()===day};
+const notificationExpiry=scheduledDate=>{let [year,month,day]=scheduledDate.split("-").map(Number),expiry=new Date(year,month-1,day+1);return {expiryDate:localDateKey(expiry),expiresAt:expiry.toISOString()}};
+function normalizeNotification(notification){
+ let now=new Date().toISOString(),createdAt=Number.isNaN(Date.parse(notification.createdAt))?now:notification.createdAt,createdDate=new Date(createdAt),scheduledDate=isDateKey(notification.scheduledDate)?notification.scheduledDate:localDateKey(createdDate),read=notification.read===true||notification.unread===false,expiry=notificationExpiry(scheduledDate),expiresAt=Number.isNaN(Date.parse(notification.expiresAt))?expiry.expiresAt:notification.expiresAt,expiryDate=isDateKey(notification.expiryDate)?notification.expiryDate:expiry.expiryDate;
+ return {...notification,createdAt,scheduledDate,read,unread:!read,readAt:read?(notification.readAt||createdAt):null,expiryDate,expiresAt};
+}
+const daysIn=(y,m)=>new Date(y,m,0).getDate();
+const monthKey=(y,m)=>`${y}-${String(m).padStart(2,"0")}`;
+const uid=()=>Math.random().toString(36).slice(2,10);
+const defaults=["Groceries","Food & Dining","Fuel / Transport","Bills & Utilities","Rent / House","Shopping","Health","Family","Entertainment","Other"],categoryColors=["#36ddb8","#70a9ff","#f5bd61","#b78cff","#ff8b72","#64c9eb","#fa8ca8","#a7d96c"];
+let state,storageLoadError=null;
+let audioContext=null;
+try{state=JSON.parse(localStorage.getItem("Pocketa_v1"))}catch(error){storageLoadError=error}
+if(!state||!Array.isArray(state.items)) state={items:defaults.map(name=>({id:uid(),name,builtIn:true})),targets:{},entries:[]};
+state.items=state.items.map(item=>({...item,builtIn:item.builtIn===true||defaults.includes(item.name)}));
+if(!state.targets)state.targets={};if(!Array.isArray(state.entries))state.entries=[];
+if(!state.settings||typeof state.settings!=="object")state.settings={};
+state.settings={notificationsEnabled:false,soundEnabled:false,reminders:[],...state.settings};
+if(!Array.isArray(state.settings.reminders))state.settings.reminders=[];
+if(!Array.isArray(state.notifications))state.notifications=[];
+const notificationMetadataMissing=state.notifications.some(notification=>notification&&typeof notification==="object"&&(Number.isNaN(Date.parse(notification.createdAt))||!isDateKey(notification.scheduledDate)||typeof notification.read!=="boolean"||!("readAt"in notification)||!isDateKey(notification.expiryDate)||Number.isNaN(Date.parse(notification.expiresAt))));
+const legacyReminderNotificationsPresent=state.notifications.some(notification=>notification&&typeof notification==="object"&&(notification.title?.trim().toLowerCase()==="reminder added"||notification.title?.trim().toLowerCase()==="reminder updated"&&notification.message?.trim().toLowerCase()==="your reminder settings were updated."));
+state.notifications=state.notifications.filter(notification=>notification&&typeof notification==="object").map(normalizeNotification).filter(notification=>!(notification.title?.trim().toLowerCase()==="reminder added"||notification.title?.trim().toLowerCase()==="reminder updated"&&notification.message?.trim().toLowerCase()==="your reminder settings were updated."));
+let selected={year:currentYear,month:currentMonth,item:"all",date:""}, editing=null, activeTab="overview", period="month",lastBudgetAlertKey="";
+let calendarInput=null,calendarYear=currentYear,calendarMonth=currentMonth-1,editingReminderId=null,pendingRemovalItemId=null,lastObservedLocalDate=localDateKey(new Date());
+const save=()=>{try{localStorage.setItem("Pocketa_v1",JSON.stringify(state));return true}catch(error){console.error("Could not save Pocketa data locally.",error);toast("Could not save data on this device. Check available storage.");return false}};
+if(notificationMetadataMissing||legacyReminderNotificationsPresent)save();
+function cleanupExpiredNotifications(){
+ let now=Date.now(),count=state.notifications.length;
+ state.notifications=state.notifications.filter(notification=>Date.parse(notification.expiresAt)>now);
+ if(state.notifications.length!==count)save();
+ return state.notifications.length!==count;
+}
+const target=(itemId,y=selected.year,m=selected.month)=>Number(state.targets[`${monthKey(y,m)}_${itemId}`]||0);
+const setTarget=(itemId,val,y=selected.year,m=selected.month)=>{state.targets[`${monthKey(y,m)}_${itemId}`]=Number(val)||0;save()};
+function showBudgetAlert(){
+ let budget=sum(state.items,item=>target(item.id,currentYear,currentMonth)),spent=sum(state.entries,entry=>{let date=new Date(entry.date+"T12:00:00");return date.getFullYear()===currentYear&&date.getMonth()+1===currentMonth?Number(entry.amount):0});
+ if(budget<=0){lastBudgetAlertKey="";return}
+ let status=spent>budget?"over":spent>=budget*.83?"warning":"";
+ if(!status){lastBudgetAlertKey="";return}
+ let amount=status==="over"?spent-budget:budget-spent,key=`${status}:${amount}`;
+ if(key===lastBudgetAlertKey)return;
+ lastBudgetAlertKey=key;
+ toast(status==="over"?`You Are Over Budget By ${money(amount)}!`:`You Have ${money(amount)} Left From Your Monthly Budget. Please Keep This In Mind Before Making Any New Transactions.`);
+}
+const filteredEntries=()=>state.entries.filter(e=>{let d=new Date(e.date+"T12:00:00");return (selected.date?e.date===selected.date:d.getFullYear()===selected.year&&d.getMonth()+1===selected.month)&&(selected.item==="all"||e.itemId===selected.item)});
+const entriesFor=(itemId,y=selected.year,m=selected.month)=>state.entries.filter(e=>e.itemId===itemId&&e.date.startsWith(monthKey(y,m)+"-"));
+const totalFor=(itemId,y=selected.year,m=selected.month)=>entriesFor(itemId,y,m).reduce((s,e)=>s+Number(e.amount),0);
+const sum=(arr,fn)=>arr.reduce((s,x)=>s+fn(x),0);
+const scopedItems=()=>state.items.filter(i=>selected.item==="all"||i.id===selected.item);
+const totalTarget=(y=selected.year,m=selected.month)=>sum(scopedItems(),i=>target(i.id,y,m));
+const totalSpent=(y=selected.year,m=selected.month)=>sum(scopedItems(),i=>totalFor(i.id,y,m));
+const extraFor=(itemId,y=selected.year,m=selected.month)=>Math.max(0,totalFor(itemId,y,m)-target(itemId,y,m));
+const fmtDate=s=>{let [year,month,day]=s.split("-");return `${day}-${month}-${year}`};
+const inputValueDescriptor=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value");
+document.querySelectorAll(".date-input-wrap input").forEach(input=>Object.defineProperty(input,"value",{configurable:true,get(){return input.dataset.dateKey||""},set(value){let date=String(value||"");input.dataset.dateKey=isDateKey(date)?date:"";inputValueDescriptor.set.call(input,input.dataset.dateKey?fmtDate(input.dataset.dateKey):date)}}));
+const reminderTimeInput=$("reminderTime"),reminderTimeValueDescriptor=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value");
+Object.defineProperty(reminderTimeInput,"value",{configurable:true,get(){return reminderTimeInput.dataset.time||"20:00"},set(value){let time=String(value||"20:00");reminderTimeInput.dataset.time=time;reminderTimeValueDescriptor.set.call(reminderTimeInput,time);let [hours,minutes]=time.split(":").map(Number);$("reminderTimeLabel").textContent=`${String(hours%12||12).padStart(2,"0")}:${String(minutes).padStart(2,"0")} ${hours>=12?"PM":"AM"}`}});
+let timePickerSelection={hour:8,minute:0,period:"PM"};
+function alertText(text){return String(text).replace(/\b([A-Za-z][A-Za-z']*)\b/g,word=>word[0].toUpperCase()+word.slice(1))}
+function toast(msg){$("toast").textContent=alertText(msg);$("toast").classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>$("toast").classList.add("hidden"),3000)}
+function closeRemoveItemModal(){pendingRemovalItemId=null;$("removeItemModal").classList.add("hidden")}
+function confirmRemoveItem(){
+ let index=state.items.findIndex(item=>item.id===pendingRemovalItemId);
+ if(index<0){closeRemoveItemModal();return}
+ let [item]=state.items.splice(index,1);
+ if(!save()){state.items.splice(index,0,item);closeRemoveItemModal();return}
+ closeRemoveItemModal();render();toast("Item removed");
+}
+async function prepareAlertAudio(){
+ let AudioContextType=window.AudioContext||window.webkitAudioContext;
+ if(!AudioContextType){toast("Alert sounds are not supported in this browser");return false}
+ try{
+  if(!audioContext||audioContext.state==="closed")audioContext=new AudioContextType();
+  if(audioContext.state==="suspended")await audioContext.resume();
+  return true;
+ }catch(error){console.warn("Could not enable alert sounds.",error);toast("Could not enable alert sounds");return false}
+}
+async function playAlertSound(){
+ if(!await prepareAlertAudio())return;
+ try{
+  let context=audioContext,oscillator=context.createOscillator(),gain=context.createGain();
+  oscillator.type="sine";oscillator.frequency.setValueAtTime(660,context.currentTime);oscillator.frequency.setValueAtTime(880,context.currentTime+.14);
+  gain.gain.setValueAtTime(.0001,context.currentTime);gain.gain.exponentialRampToValueAtTime(.16,context.currentTime+.02);gain.gain.exponentialRampToValueAtTime(.0001,context.currentTime+.34);
+  oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+.36);
+ }catch(error){console.warn("Could not play the alert sound.",error);toast("Could not play the alert sound")}
+}
+function notifyUser(title,message,{sound=false,scheduledDate=localDateKey(new Date()),displayDateTime=""}={}){
+ title=alertText(title);message=alertText(message);
+ let createdAt=new Date().toISOString(),notification={id:uid(),title,message,createdAt,scheduledDate,displayDateTime,read:false,readAt:null,unread:true,...notificationExpiry(scheduledDate)};
+ state.notifications.unshift(notification);state.notifications=state.notifications.slice(0,50);save();renderNotifications();
+ if(message)toast(message);
+ if(sound&&state.settings.soundEnabled)playAlertSound();
+ if(state.settings.notificationsEnabled&&"Notification"in window&&Notification.permission==="granted"){
+  try{new Notification(title,{body:displayDateTime||message,tag:notification.id})}catch(error){console.warn("Could not display a browser notification.",error)}
+ }
+}
+function renderNotifications(){
+ let list=$("notificationList");
+ let unreadCount=state.notifications.filter(item=>item.unread).length,badge=$("notificationBadge");
+ badge.textContent=unreadCount>99?"99+":String(unreadCount);badge.classList.toggle("hidden",unreadCount===0);
+ $("remindersBtn").setAttribute("aria-label",unreadCount?`Reminders and notifications, ${unreadCount} unread`:"Reminders and notifications");
+ let visible=state.notifications.filter(item=>item.unread);
+ if(!visible.length){list.innerHTML='<div class="empty">You are all caught up.</div>';return}
+ list.innerHTML=visible.map(item=>{let createdAt=new Date(item.createdAt),dateTime=item.displayDateTime||`${fmtDate(localDateKey(createdAt))} . ${createdAt.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`;return `<article class="notification-card rounded-xl border border-[#343438] bg-[#1a1a1c] p-3 unread"><div class="flex items-start justify-between gap-2"><strong class="block text-[13px]">${esc(item.title)}</strong></div><small class="mt-1 block text-[12px] text-[#99999f]">${esc(dateTime)}</small>${item.message?`<p class="mt-1 text-xs text-[#ddd]">${esc(item.message)}</p>`:""}</article>`}).join("");
+}
+const formatReminderTime=time=>{let [hours,minutes]=time.split(":").map(Number);return `${String(hours%12||12).padStart(2,"0")}:${String(minutes).padStart(2,"0")} ${hours>=12?"PM":"AM"}`};
+function reminderScheduleText(reminder){
+ let time=formatReminderTime(reminder.time);
+ let when=reminder.frequency==="weekly"?` . ${new Date(2024,0,7+Number(reminder.weekday??1)).toLocaleDateString("en-US",{weekday:"long"})}`:"";
+ let startDate=reminder.startDate?` . From ${fmtDate(reminder.startDate)}`:"";
+ return `${reminder.frequency[0].toUpperCase()+reminder.frequency.slice(1)} at ${time}${when}${startDate}`;
+}
+function reminderTitle(reminder){return reminder.title||reminder.message||"Reminder"}
+function renderReminders(){
+ let list=$("reminderList");
+ let panel=list.closest(".reminder-list-panel"),hasReminders=state.settings.reminders.length>0;
+ panel.classList.toggle("hidden",!hasReminders);
+ $("remindersModal").querySelector(".reminders-modal").classList.toggle("has-reminders",hasReminders);
+ $("remindersWorkspace").classList.toggle("has-reminders",hasReminders);
+ if(!hasReminders){list.innerHTML="";return}
+ list.innerHTML=state.settings.reminders.map(reminder=>`<article class="reminder-card"><div class="reminder-card-details"><strong>${esc(reminderTitle(reminder))}</strong><small>${esc(reminderScheduleText(reminder))}</small></div><div class="reminder-actions"><button class="btn small item-edit-btn" type="button" data-edit-reminder="${esc(reminder.id)}" aria-label="Edit ${esc(reminderTitle(reminder))}" title="Edit reminder"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16z"/></svg></button><button class="btn danger" type="button" data-delete-reminder="${esc(reminder.id)}" aria-label="Remove ${esc(reminderTitle(reminder))}">Remove</button></div></article>`).join("");
+}
+function resetReminderForm(){
+ editingReminderId=null;$("reminderForm").reset();$("reminderDate").value=dateKey(today.getFullYear(),today.getMonth()+1,today.getDate());$("reminderTime").value="20:00";$("saveReminder").textContent="Add Reminder";$("cancelReminderEdit").classList.add("hidden");updateReminderFrequencyFields();
+}
+function updateReminderFrequencyFields(){
+ let frequency=$("reminderFrequency").value;
+ $("reminderWeekdayField").classList.toggle("hidden",frequency!=="weekly");
+}
+function checkDueReminders(){
+ let now=new Date(),date=dateKey(now.getFullYear(),now.getMonth()+1,now.getDate()),time=`${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`,changed=false;
+ if(date!==lastObservedLocalDate){lastObservedLocalDate=date;cleanupExpiredNotifications();renderNotifications()}
+ else if(cleanupExpiredNotifications())renderNotifications();
+ for(let reminder of state.settings.reminders){
+  if(!reminder.enabled||reminder.time!==time||(reminder.startDate&&date<reminder.startDate))continue;
+  let occurrenceKey=reminder.frequency==="monthly"?monthKey(now.getFullYear(),now.getMonth()+1):date;
+  if(reminder.frequency==="weekly"&&now.getDay()!==Number(reminder.weekday))continue;
+  if(reminder.frequency==="monthly"&&now.getDate()!==Math.min(Number(reminder.monthday)||1,daysIn(now.getFullYear(),now.getMonth()+1)))continue;
+  if(reminder.frequency!=="daily"&&reminder.frequency!=="weekly"&&reminder.frequency!=="monthly")continue;
+  if(reminder.lastFiredKey===occurrenceKey)continue;
+  reminder.lastFiredKey=occurrenceKey;changed=true;notifyUser("Reminder",reminderTitle(reminder),{sound:true,scheduledDate:date});
+ }
+ if(changed)save();
+}
+function renderCalendar(){
+ let first=new Date(calendarYear,calendarMonth,1),offset=(first.getDay()+6)%7,start=new Date(calendarYear,calendarMonth,1-offset),selectedDate=calendarInput?.value||"";
+ let title=first.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+ $("calendarPopover").innerHTML=`<div class="calendar-header"><button class="calendar-nav" type="button" data-calendar-shift="-1" aria-label="Previous month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><strong>${title}</strong><button class="calendar-nav" type="button" data-calendar-shift="1" aria-label="Next month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div><div class="calendar-weekdays">${["Mo","Tu","We","Th","Fr","Sa","Su"].map(day=>`<span>${day}</span>`).join("")}</div><div class="calendar-days">${Array.from({length:42},(_,index)=>{let day=new Date(start);day.setDate(start.getDate()+index);let key=dateKey(day.getFullYear(),day.getMonth()+1,day.getDate()),outside=day.getMonth()!==calendarMonth,todayKey=dateKey(today.getFullYear(),today.getMonth()+1,today.getDate());return `<button class="calendar-day ${outside?"outside":""} ${key===todayKey?"today":""} ${key===selectedDate?"selected":""}" type="button" data-calendar-date="${key}" aria-label="${day.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}" aria-pressed="${key===selectedDate}">${day.getDate()}</button>`}).join("")}</div>`;
+}
+function renderTimePicker(){
+ let {hour,minute,period}=timePickerSelection,popover=$("timePickerPopover");
+ popover.innerHTML=`<div class="time-picker-heading"><strong>Choose a time</strong><span>Select an hour and minute</span></div><div class="time-picker-columns"><section class="time-picker-column"><h4>Hour</h4><div class="time-picker-options" role="listbox" aria-label="Hour">${Array.from({length:12},(_,index)=>index+1).map(value=>`<button class="time-picker-option ${value===hour?"selected":""}" type="button" role="option" aria-selected="${value===hour}" data-time-hour="${value}">${String(value).padStart(2,"0")}</button>`).join("")}</div></section><section class="time-picker-column"><h4>Minute</h4><div class="time-picker-options" role="listbox" aria-label="Minute">${Array.from({length:60},(_,value)=>`<button class="time-picker-option ${value===minute?"selected":""}" type="button" role="option" aria-selected="${value===minute}" data-time-minute="${value}">${String(value).padStart(2,"0")}</button>`).join("")}</div></section></div><div class="time-picker-footer"><div class="time-picker-period" role="group" aria-label="AM or PM"><button class="${period==="AM"?"selected":""}" type="button" data-time-period="AM" aria-pressed="${period==="AM"}">AM</button><button class="${period==="PM"?"selected":""}" type="button" data-time-period="PM" aria-pressed="${period==="PM"}">PM</button></div><button class="time-picker-done" type="button" data-time-done>Done</button></div>`;
+}
+function centerTimePickerSelections(){$("timePickerPopover").querySelectorAll(".time-picker-options").forEach(list=>{let selected=list.querySelector(".selected");if(selected)list.scrollTop=selected.offsetTop-list.offsetTop-(list.clientHeight-selected.offsetHeight)/2})}
+function openTimePicker(){
+ let [hours,minutes]=($("reminderTime").value||"20:00").split(":").map(Number);
+ timePickerSelection={hour:hours%12||12,minute:minutes,period:hours>=12?"PM":"AM"};
+ renderTimePicker();
+ let popover=$("timePickerPopover"),trigger=$("reminderTimeDisplay"),rect=trigger.getBoundingClientRect(),width=Math.min(360,innerWidth-24);
+ popover.classList.remove("hidden");popover.style.width=`${width}px`;centerTimePickerSelections();
+ let height=popover.offsetHeight,left=Math.max(12,Math.min(rect.left,innerWidth-width-12)),top=rect.bottom+8;
+ if(top+height>innerHeight-12)top=Math.max(12,rect.top-height-8);
+ let heading=trigger.closest(".modal")?.querySelector(".dialog-heading"),headingRect=heading?.getBoundingClientRect();
+ if(headingRect&&top<headingRect.bottom&&top+height>headingRect.top){
+  let belowHeading=headingRect.bottom+8,aboveHeading=headingRect.top-height-8;
+  if(belowHeading+height<=innerHeight)top=belowHeading;
+  else if(aboveHeading>=12)top=aboveHeading;
+ }
+ popover.style.left=`${left}px`;popover.style.top=`${top}px`;trigger.setAttribute("aria-expanded","true");
+}
+function closeTimePicker(){$("timePickerPopover").classList.add("hidden");$("reminderTimeDisplay").setAttribute("aria-expanded","false")}
+function updateTimePickerValue(){
+ let hour24=timePickerSelection.hour%12+(timePickerSelection.period==="PM"?12:0);
+ $("reminderTime").value=`${String(hour24).padStart(2,"0")}:${String(timePickerSelection.minute).padStart(2,"0")}`;
+}
+function openCalendar(input){
+ calendarInput=input;
+ let value=input.value,parsed=/^\d{4}-\d{2}-\d{2}$/.test(value)?new Date(value+"T12:00:00"):today;
+ calendarYear=parsed.getFullYear();calendarMonth=parsed.getMonth();renderCalendar();
+ let popover=$("calendarPopover");popover.classList.remove("hidden");
+ let rect=input.getBoundingClientRect(),width=Math.min(320,innerWidth-24),height=popover.offsetHeight;
+ let left=Math.max(12,Math.min(rect.left,innerWidth-width-12)),top=rect.bottom+8;
+ if(top+height>innerHeight-12)top=Math.max(12,rect.top-height-8);
+ popover.style.left=`${left}px`;popover.style.top=`${top}px`;
+}
+function closeCalendar(){ $("calendarPopover").classList.add("hidden");calendarInput=null }
+function chooseCalendarDate(value){
+ if(!calendarInput)return;
+ calendarInput.value=value;
+ calendarInput.dispatchEvent(new Event("input",{bubbles:true}));
+ calendarInput.dispatchEvent(new Event("change",{bubbles:true}));
+ closeCalendar();
+}
+function fillFilters(){
+ let years=new Set([currentYear,...state.entries.map(e=>+e.date.slice(0,4)),...Object.keys(state.targets).map(k=>+k.slice(0,4))]);
+ let ys=[...years].filter(Number.isFinite).sort((a,b)=>b-a);if(!ys.includes(selected.year))ys.push(selected.year);
+ $("yearFilter").innerHTML=ys.sort((a,b)=>b-a).map(y=>`<option value="${y}">${y}</option>`).join("");$("yearFilter").value=selected.year;
+ $("monthFilter").innerHTML=months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join("");$("monthFilter").value=selected.month;
+ $("itemFilter").innerHTML='<option value="all">All items</option>'+state.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");$("itemFilter").value=selected.item;
+ let userItems=state.items.filter(i=>!i.builtIn),itemOptions=state.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join(""),userItemOptions=userItems.map(i=>`<option value="${esc(i.name)}"></option>`).join("");
+ $("expenseItem").innerHTML=itemOptions;
+ $("modalItem").innerHTML=itemOptions;
+ $("expenseItemOptions").innerHTML=userItemOptions;
+ $("dateFilter").value=selected.date;
+ $("reportYearLabel").textContent=selected.year;
+}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function setTab(tab){activeTab=tab;document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["overview","daily","monthly","items","reports"].forEach(t=>$("tab-"+t).classList.toggle("hidden",t!==tab));render()}
+function render(){
+ fillFilters();renderOverview();renderEntries();renderMonthly();renderItems();renderReports();
+}
+function renderOverview(){
+ let t=totalTarget(),monthSpent=totalSpent(),dailyDate=selected.date||(period==="today"?dateKey(today.getFullYear(),today.getMonth()+1,today.getDate()):""),s=dailyDate?sum(state.entries.filter(e=>e.date===dailyDate&&(selected.item==="all"||e.itemId===selected.item)),e=>Number(e.amount)):monthSpent,bal=t-monthSpent,extra=sum(scopedItems(),i=>extraFor(i.id));
+ $("sTarget").textContent=money(t);$("sSpent").textContent=money(s);$("sRemaining").textContent=money(Math.max(0,bal));$("sExtra").textContent=money(extra);
+ $("remainingCard").classList.toggle("red",bal<0);$("remainingCard").classList.toggle("green",bal>=0);$("extraCard").classList.toggle("red",extra>0);
+ $("spentLabel").textContent=selected.date?"Expenses on date":period==="today"?"Today's expenses":"Total expenses";
+ $("sSpentHint").textContent=dailyDate?fmtDate(dailyDate):`${months[selected.month-1]} ${selected.year}`;
+ $("budgetSubtitle").textContent=`${months[selected.month-1]} ${selected.year} . Target vs actual spending`;
+ $("budgetProgressLabel").textContent=`${money(monthSpent)} of ${money(t)}`;
+ let budgetPct=t?monthSpent/t*100:0;
+ $("budgetProgressPct").textContent=`${Math.round(budgetPct)}%`;
+ $("budgetProgressPct").classList.toggle("over",budgetPct>100);
+ $("budgetProgressBar").style.width=Math.min(100,budgetPct)+"%";
+ $("budgetProgressBar").style.background=budgetPct>100?"var(--red)":"";
+ $("budgetMessage").classList.toggle("warning",extra>0);
+ $("budgetMessage").textContent=extra>0?`You're ${money(extra)} over budget this month. Review the highlighted categories to see where spending is above target.`:"You're On Track. Your spending is within this month's category budgets.";
+ let items=state.items.filter(i=>selected.item==="all"||i.id===selected.item);
+ $("budgetList").innerHTML=items.length?items.map((i,index)=>{let tg=target(i.id),sp=totalFor(i.id),pct=tg?sp/tg*100:(sp?100:0),over=sp>tg&&sp>0,color=categoryColors[index%categoryColors.length];return `<div class="budget-row ${over?"over":""}" style="--item-color:${color}"><div><div class="budget-name-wrap"><span class="budget-dot"></span><span class="budget-name">${esc(i.name)}</span></div><div class="sub">${over?`Extra ${money(sp-tg)}`:`${money(Math.max(0,tg-sp))} left`}</div></div><div class="bar-wrap"><div class="bar"><span class="${over?"over":""}" style="width:${Math.min(100,pct)}%;${over?"":"background:"+color}"></span></div><div class="sub">${Math.round(pct)}% of target</div></div><div class="budget-numbers">${money(sp)} / ${money(tg)}<br><span class="pill ${over?"over":""}">${over?"Over Budget":"On Track"}</span></div></div>`}).join(""):'<div class="empty">No expense items. Add one in Manage items.</div>';
+ let recent=state.entries.filter(e=>(selected.date?e.date===selected.date:e.date.startsWith(monthKey(selected.year,selected.month)+"-"))&&(selected.item==="all"||e.itemId===selected.item)).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+ $("recentList").innerHTML=entryTable(recent);
+}
+function entryTable(arr){
+ if(!arr.length)return '<div class="empty">No expenses recorded for this selection yet.</div>';
+ return `<div class="entry-list">${arr.map(e=>{let it=state.items.find(i=>i.id===e.itemId);return `<article class="entry-card"><div class="entry-main"><span class="entry-icon" aria-hidden="true">&#8377;</span><div class="entry-description"><strong>${esc(it?.name||"Deleted item")}</strong><small>${fmtDate(e.date)} . ${esc(e.note||"No note")}</small></div><strong class="entry-amount">${money(e.amount)}</strong></div><div class="entry-actions"><button class="btn small" data-edit="${e.id}">Edit</button><button class="btn small danger" data-delete="${e.id}">Delete</button></div></article>`}).join("")}</div>`;
+}
+function renderEntries(){
+ let query=$("entrySearch").value.trim().toLowerCase(),date=$("entryDateFilter").value;
+ let arr=filteredEntries().filter(e=>{
+  if(date&&e.date!==date)return false;
+  if(!query)return true;
+  let item=state.items.find(i=>i.id===e.itemId);
+  return `${item?.name||"deleted item"} ${e.note||""} ${e.date} ${fmtDate(e.date)}`.toLowerCase().includes(query);
+ }).sort((a,b)=>b.date.localeCompare(a.date));
+ $("entryList").innerHTML=entryTable(arr);
+}
+function renderMonthly(){
+ let n=daysIn(selected.year,selected.month);$("daysLabel").textContent=n+" days";
+ let monthBudget=totalTarget(),monthSpend=totalSpent(),monthExtra=sum(scopedItems(),i=>extraFor(i.id));
+ $("monthBudgetTotal").textContent=money(monthBudget);$("monthSpentTotal").textContent=money(monthSpend);
+ $("monthRemainingTotal").textContent=money(Math.max(0,monthBudget-monthSpend));$("monthExtraTotal").textContent=money(monthExtra);
+ $("monthExtraTotal").parentElement.classList.toggle("has-extra",monthExtra>0);
+ let head=`<thead><tr><th>Expense item</th>${Array.from({length:n},(_,d)=>`<th>${d+1}</th>`).join("")}<th class="total-col">Total</th><th>Target</th><th>Extra</th></tr></thead>`;
+ let rows=state.items.filter(i=>selected.item==="all"||i.id===selected.item).map(i=>{
+  let spent=totalFor(i.id),tg=target(i.id),extra=Math.max(0,spent-tg),over=spent>tg&&spent>0;
+  return `<tr class="${over?"row-over":""}"><td><strong>${esc(i.name)}</strong></td>${Array.from({length:n},(_,d)=>{let day=String(d+1).padStart(2,"0"),date=`${monthKey(selected.year,selected.month)}-${day}`,amount=sum(state.entries.filter(e=>e.itemId===i.id&&e.date===date),e=>Number(e.amount));return `<td class="day-cell"><input class="cell-input" type="number" min="0" step=".01" value="${amount||""}" placeholder="." aria-label="${esc(i.name)} day ${d+1}" data-cell-item="${i.id}" data-cell-date="${date}"></td>`}).join("")}<td class="total-col">${money(spent)}</td><td>${money(tg)}</td><td style="color:${over?"var(--red)":"var(--green)"};font-weight:800">${money(extra)}</td></tr>`
+ }).join("");
+ let daily=Array.from({length:n},(_,d)=>{let date=`${monthKey(selected.year,selected.month)}-${String(d+1).padStart(2,"0")}`;return sum(state.entries.filter(e=>e.date===date&&(selected.item==="all"||e.itemId===selected.item)),e=>Number(e.amount))});
+ let totalrow=`<tr><td><strong>Daily total</strong></td>${daily.map(v=>`<td class="total-col">${v?money(v):"."}</td>`).join("")}<td class="total-col">${money(sum(daily,v=>v))}</td><td>.</td><td>.</td></tr>`;
+ $("dayGrid").innerHTML=`<table>${head}<tbody>${rows||`<tr><td colspan="${n+4}" class="empty">Add an expense item to start tracking.</td></tr>`}${rows?totalrow:""}</tbody></table>`;
+ let items=state.items.filter(i=>selected.item==="all"||i.id===selected.item);
+ $("mobileDayView").innerHTML=items.length?items.map(i=>{let vals=Array.from({length:n},(_,d)=>sum(state.entries.filter(e=>e.itemId===i.id&&e.date===`${monthKey(selected.year,selected.month)}-${String(d+1).padStart(2,"0")}`),e=>Number(e.amount))),over=totalFor(i.id)>target(i.id)&&totalFor(i.id)>0;return `<div class="category-card ${over?"over":""}"><div class="category-top"><strong>${esc(i.name)}</strong><span class="pill ${over?"over":""}">${money(totalFor(i.id))} / ${money(target(i.id))}</span></div><div class="category-meta">${over?`Over Budget . ${money(extraFor(i.id))} extra`:`${money(Math.max(0,target(i.id)-totalFor(i.id)))} remaining`} . tap a day to update</div><div class="mobile-days">${vals.map((v,d)=>`<button class="day-chip ${v?"has":""} ${dateKey(selected.year,selected.month,d+1)===dateKey(today.getFullYear(),today.getMonth()+1,today.getDate())?"today":""}" data-mobile-cell="${i.id}" data-day="${d+1}"><span>${d+1}</span><b>${v?shortMoney(v):"+"}</b></button>`).join("")}</div></div>`}).join(""):'<div class="empty">No items to show.</div>';
+}
+function shortMoney(n){return n>=1000?(n/1000).toFixed(1)+"k":String(Math.round(n))}
+function renderItems(){
+ $("itemList").innerHTML=state.items.length?state.items.map(i=>{let spent=totalFor(i.id),extra=extraFor(i.id),over=spent>target(i.id)&&spent>0;return `<div class="category-card"><div class="category-top"><strong class="category-name">${esc(i.name)}</strong><div class="item-heading-actions"><button class="btn small item-edit-btn" type="button" data-edit-item-name="${i.id}" aria-label="Edit ${esc(i.name)} name" title="Edit item name"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 4 4 4M4 20l4-.8L19 8a2.1 2.1 0 0 0-3-3L5 16z"/></svg></button><button class="btn small danger" type="button" data-remove-item="${i.id}">Remove</button></div></div><div class="item-metrics"><div class="field"><label><span class="desktop-target-label">Monthly Target</span><span class="mobile-target-label">Target</span></label><div class="target-control"><input class="inline-input target-input" type="number" min="0" step=".01" value="${target(i.id)}" data-target-item="${i.id}" aria-label="${esc(i.name)} Monthly Target"><span class="currency-symbol" aria-hidden="true">&#8377;</span><button class="save-target-btn" type="button" data-save-target="${i.id}" title="Save target" aria-label="Save target for ${esc(i.name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button></div></div><div class="field metric-field"><label>Spent</label><div class="spent-control"><output class="metric-input" aria-label="Spent ${money(spent)}">${amountText(spent)}</output><span class="currency-symbol" aria-hidden="true">&#8377;</span></div></div><div class="field metric-field extra-field ${over?"has-extra":""}"><label>Extra</label><output class="metric-input" aria-label="Extra ${money(extra)}">${money(extra)}</output></div></div></div>`}).join(""):'<div class="empty">No items yet. Add your first expense item above.</div>';
+}
+function renderReports(){
+ let ys=selected.year,yearTarget=0,yearSpent=0,yearExtra=0,monthRows=[];
+ for(let m=1;m<=12;m++){let tg=totalTarget(ys,m),sp=totalSpent(ys,m),ex=sum(state.items,i=>extraFor(i.id,ys,m));yearTarget+=tg;yearSpent+=sp;yearExtra+=ex;monthRows.push({m,tg,sp,ex})}
+ $("rTarget").textContent=money(yearTarget);$("rSpent").textContent=money(yearSpent);$("rBalance").textContent=money(yearTarget-yearSpent);$("rExtra").textContent=money(yearExtra);
+ $("yearChart").innerHTML=monthRows.map(x=>{let max=Math.max(1,...monthRows.map(row=>Math.max(row.tg,row.sp))),budgetH=Math.max(2,x.tg/max*100),spentH=Math.max(2,x.sp/max*100);return `<div class="year-bar-group" title="${months[x.m-1]}: spent ${money(x.sp)} . budget ${money(x.tg)}"><i class="year-bar budget" style="height:${budgetH}%"></i><i class="year-bar spent ${x.sp>x.tg?"over":""}" style="height:${spentH}%"></i><span>${months[x.m-1].slice(0,1)}</span></div>`}).join("");
+ let topMonth=monthRows.reduce((top,x)=>x.sp>top.sp?x:top,monthRows[0]||{m:1,sp:0});
+ let annualItems=scopedItems().map(i=>({name:i.name,spent:sum(Array.from({length:12},(_,j)=>j+1),m=>totalFor(i.id,ys,m))})).sort((a,b)=>b.spent-a.spent);
+ $("yearHighlights").innerHTML=`<div class="highlight"><span>Highest Spending Month</span><strong>${topMonth.sp?`${months[topMonth.m-1]} . ${money(topMonth.sp)}`:"No spending yet"}</strong></div><div class="highlight"><span>Top Expense Category</span><strong>${annualItems[0]?.spent?`${esc(annualItems[0].name)} . ${money(annualItems[0].spent)}`:"No spending yet"}</strong></div>`;
+ $("monthAnalyticsLabel").textContent=`${months[selected.month-1]} ${selected.year}`;
+ let monthItems=scopedItems().map(i=>({name:i.name,spent:totalFor(i.id)})).sort((a,b)=>b.spent-a.spent);
+ let dayTotals=Array.from({length:daysIn(selected.year,selected.month)},(_,d)=>{let date=dateKey(selected.year,selected.month,d+1);return sum(state.entries.filter(e=>e.date===date&&(selected.item==="all"||e.itemId===selected.item)),e=>Number(e.amount))});
+ let topDay=dayTotals.reduce((top,value,index)=>value>top.value?{day:index+1,value}:top,{day:0,value:0});
+ $("monthHighlights").innerHTML=`<div class="highlight"><span>Highest Spending Category</span><strong>${monthItems[0]?.spent?`${esc(monthItems[0].name)} . ${money(monthItems[0].spent)}`:"No spending yet"}</strong></div><div class="highlight"><span>Highest Spending Day</span><strong>${topDay.value?`${fmtDate(dateKey(selected.year,selected.month,topDay.day))} . ${money(topDay.value)}`:"No spending yet"}</strong></div>`;
+ let maxDay=Math.max(1,...dayTotals);
+ $("dailyTrend").innerHTML=dayTotals.map((v,index)=>`<div class="trend-day" title="${months[selected.month-1]} ${index+1}: ${money(v)}"><i style="height:${Math.max(v?3:1,v/maxDay*100)}%"></i><span>${index+1}</span></div>`).join("");
+ $("yearReport").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Month</th><th>Target</th><th>Spent</th><th>Remaining</th><th>Extra</th><th>Status</th></tr></thead><tbody>${monthRows.map(x=>`<tr class="${x.ex>0?"over-row":""}"><td><strong>${months[x.m-1]}</strong></td><td>${money(x.tg)}</td><td>${money(x.sp)}</td><td>${money(x.tg-x.sp)}</td><td style="color:${x.ex?"var(--red)":"var(--green)"};font-weight:750">${money(x.ex)}</td><td><span class="pill ${x.ex?"over":""}">${x.ex?"Over Budget":"On Track"}</span></td></tr>`).join("")}</tbody></table></div>`;
+ $("itemReport").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Expense item</th><th>Yearly target</th><th>Yearly spent</th><th>Extra across months</th></tr></thead><tbody>${scopedItems().map(i=>{let tg=sum(Array.from({length:12},(_,j)=>j+1),m=>target(i.id,ys,m)),sp=sum(Array.from({length:12},(_,j)=>j+1),m=>totalFor(i.id,ys,m)),ex=sum(Array.from({length:12},(_,j)=>j+1),m=>extraFor(i.id,ys,m));return `<tr><td><strong>${esc(i.name)}</strong></td><td>${money(tg)}</td><td>${money(sp)}</td><td style="color:${ex?"var(--red)":"var(--green)"};font-weight:750">${money(ex)}</td></tr>`}).join("")}</tbody></table></div>`;
+}
+function addEntry(date,itemId,amount,note){
+ let existing=state.entries.find(e=>e.date===date&&e.itemId===itemId&&e.note===(note||""));
+ if(existing){existing.amount=Number(amount)}else state.entries.push({id:uid(),date,itemId,amount:Number(amount),note:note||""});
+ save();render();toast("Saved");setTimeout(showBudgetAlert,50);
+}
+function openEditor(itemId,date){
+ let item=state.items.find(i=>i.id===itemId);if(!item)return;
+ let entries=state.entries.filter(e=>e.itemId===itemId&&e.date===date);
+ editing={itemId,date,entryIds:entries.map(e=>e.id)};
+ $("modalTitle").textContent="Update daily amount";$("modalSubtitle").textContent=`${item.name} . ${fmtDate(date)}`;
+ $("modalItem").value=itemId;
+ $("modalNewItem").value="";$("modalNewItemField").classList.toggle("hidden",item.name.trim().toLowerCase()!=="other");
+ $("modalAmount").value=sum(entries,e=>Number(e.amount))||"";$("modalNote").value=entries[0]?.note||"";
+ $("editModal").classList.remove("hidden");$("modalAmount").focus();
+}
+function closeEditor(){$("editModal").classList.add("hidden");editing=null}
+$("modalCancel").onclick=closeEditor;
+$("modalItem").addEventListener("change",()=>{let item=state.items.find(value=>value.id===$("modalItem").value);let isOther=item?.name.trim().toLowerCase()==="other";$("modalNewItemField").classList.toggle("hidden",!isOther);if(!isOther)$("modalNewItem").value=""});
+$("modalNewItem").addEventListener("input",()=>$("modalNewItem").setCustomValidity(""));
+$("modalSave").onclick=()=>{
+ if(!editing)return;
+ let amount=Number($("modalAmount").value),note=$("modalNote").value.trim(),itemId=$("modalItem").value,item=state.items.find(value=>value.id===itemId),newItemName=$("modalNewItem").value.trim();
+ if(item?.name.trim().toLowerCase()==="other"){
+  if(!newItemName){$("modalNewItem").setCustomValidity("Enter an expense item.");$("modalNewItem").reportValidity();return}
+  $("modalNewItem").setCustomValidity("");
+  if(state.items.some(value=>value.name.trim().toLowerCase()===newItemName.toLowerCase())){toast("This expense item already exists");return}
+  let newItem={id:uid(),name:newItemName,builtIn:false};state.items.push(newItem);itemId=newItem.id;
+ }
+ state.entries=state.entries.filter(e=>!(e.itemId===editing.itemId&&e.date===editing.date));
+ if(amount>0)state.entries.push({id:uid(),date:editing.date,itemId,amount,note});
+ save();closeEditor();render();toast("Saved");setTimeout(showBudgetAlert,50)
+};
+function bindNoteSuggestions(input){
+ const suggestions=["JayaSree Canteen","Zomato","Swiggy","House of Tauok","Wafa fuels"],popup=document.createElement("div");
+ popup.className="note-suggestions hidden";popup.id=input.id+"Suggestions";popup.setAttribute("role","listbox");input.parentElement.appendChild(popup);input.setAttribute("aria-autocomplete","list");input.setAttribute("aria-controls",popup.id);input.setAttribute("aria-expanded","false");
+ const hide=()=>{popup.classList.add("hidden");input.setAttribute("aria-expanded","false")};
+ const show=()=>{let query=input.value.trim().toLowerCase(),matches=suggestions.filter(value=>value.toLowerCase().includes(query));if(!matches.length){hide();return}popup.innerHTML=matches.map(value=>`<button class="note-suggestion-option" type="button" role="option">${esc(value)}</button>`).join("");popup.classList.remove("hidden");input.setAttribute("aria-expanded","true")};
+ input.addEventListener("focus",show);input.addEventListener("input",show);
+ input.addEventListener("keydown",e=>{if(e.key==="ArrowDown"&&!popup.classList.contains("hidden")){e.preventDefault();popup.querySelector("button")?.focus()}else if(e.key==="Escape")hide()});
+ input.addEventListener("blur",()=>setTimeout(()=>{if(!popup.contains(document.activeElement))hide()},100));
+ popup.addEventListener("click",e=>{let option=e.target.closest("button");if(!option)return;input.value=option.textContent;hide();input.focus()});
+ document.addEventListener("click",e=>{if(!input.parentElement.contains(e.target))hide()});
+}
+bindNoteSuggestions($("expenseNote"));bindNoteSuggestions($("modalNote"));
+$("expenseItem").addEventListener("change",()=>{let item=state.items.find(value=>value.id===$("expenseItem").value),isOther=item?.name.trim().toLowerCase()==="other";$("expenseNewItemField").classList.toggle("hidden",!isOther);$("expenseNewItem").required=!!isOther;if(!isOther){$("expenseNewItem").value="";$("expenseNewItem").setCustomValidity("")}});
+$("expenseNewItem").addEventListener("input",()=>$("expenseNewItem").setCustomValidity(""));
+$("expenseForm").addEventListener("submit",e=>{e.preventDefault();let date=$("expenseDate").value,itemId=$("expenseItem").value,amount=Number($("expenseAmount").value),note=$("expenseNote").value.trim(),item=state.items.find(value=>value.id===itemId);if(item?.name.trim().toLowerCase()==="other"){
+ let name=$("expenseNewItem").value.trim();if(!name){$("expenseNewItem").setCustomValidity("Enter an expense item.");$("expenseNewItem").reportValidity();return}
+ $("expenseNewItem").setCustomValidity("");if(state.items.some(value=>value.name.trim().toLowerCase()===name.toLowerCase())){toast("This expense item already exists");return}
+ let newItem={id:uid(),name,builtIn:false};state.items.push(newItem);itemId=newItem.id;
+ }if(!date||!itemId||amount<=0)return;addEntry(date,itemId,amount,note);$("addExpenseModal").classList.add("hidden");$("expenseForm").reset();$("expenseNewItemField").classList.add("hidden");$("expenseNewItem").required=false;$("expenseDate").value=dateKey(selected.year,selected.month,selected.year===currentYear&&selected.month===currentMonth?Math.min(today.getDate(),daysIn(selected.year,selected.month)):1)});
+$("filterBtn").onclick=()=>{$("filterModal").classList.remove("hidden");$("yearFilter").focus()};
+$("remindersBtn").onclick=()=>{
+ cleanupExpiredNotifications();renderNotifications();
+ if(state.notifications.length){$("notificationsModal").classList.remove("hidden");renderNotifications();return}
+ $("remindersModal").classList.remove("hidden");renderReminders();$("reminderTitle").focus();
+};
+$("downloadBtn").onclick=()=>$("dataModal").classList.remove("hidden");
+$("manageReminders").onclick=()=>{$("notificationsModal").classList.add("hidden");$("remindersModal").classList.remove("hidden");renderReminders();$("reminderTitle").focus()};
+$("settingsBtn").onclick=()=>{$("notificationsToggle").checked=state.settings.notificationsEnabled;$("soundToggle").checked=state.settings.soundEnabled;$("settingsModal").classList.remove("hidden")};
+document.querySelectorAll("[data-open-filters]").forEach(b=>b.onclick=()=>$("filterModal").classList.remove("hidden"));
+function syncFilterNewItem(){let item=state.items.find(value=>value.id===$("itemFilter").value),isOther=item?.name.trim().toLowerCase()==="other";$("filterNewItemField").classList.toggle("hidden",!isOther);$("filterNewItem").required=!!isOther;if(!isOther){$("filterNewItem").value="";$("filterNewItem").setCustomValidity("")}}
+$("itemFilter").addEventListener("change",syncFilterNewItem);
+$("todayBtn").addEventListener("click",()=>setTimeout(syncFilterNewItem,0));
+$("filterNewItem").addEventListener("input",()=>$("filterNewItem").setCustomValidity(""));
+document.querySelectorAll("[data-open-filters]").forEach(b=>b.onclick=()=>{$("filterModal").classList.remove("hidden");syncFilterNewItem()});
+$("filterDone").onclick=()=>{let item=state.items.find(value=>value.id===$("itemFilter").value);if(item?.name.trim().toLowerCase()==="other"){
+ let name=$("filterNewItem").value.trim();if(!name){$("filterNewItem").setCustomValidity("Enter an expense item.");$("filterNewItem").reportValidity();return}
+ $("filterNewItem").setCustomValidity("");if(state.items.some(value=>value.name.trim().toLowerCase()===name.toLowerCase())){toast("This expense item already exists");return}
+ let newItem={id:uid(),name,builtIn:false};state.items.push(newItem);selected.item=newItem.id;save();render();
+ }$("filterModal").classList.add("hidden")};
+function openExpenseForm(){$("expenseForm").reset();$("expenseNewItemField").classList.add("hidden");$("expenseNewItem").required=false;$("expenseNewItem").setCustomValidity("");$("expenseDate").value=selected.date||dateKey(selected.year,selected.month,selected.year===currentYear&&selected.month===currentMonth?Math.min(today.getDate(),daysIn(selected.year,selected.month)):1);$("addExpenseModal").classList.remove("hidden");$("expenseDate").focus()}
+document.querySelectorAll("[data-open-expense]").forEach(b=>b.onclick=openExpenseForm);
+document.querySelectorAll("[data-period]").forEach(b=>b.onclick=()=>{period=b.dataset.period;if(period==="today"){selected.year=today.getFullYear();selected.month=today.getMonth()+1;selected.date=""}else selected.date="";document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x===b));render()});
+document.querySelectorAll(".date-input-wrap input").forEach(input=>input.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openCalendar(input)}}));
+$("calendarPopover").addEventListener("click",e=>{
+ e.stopPropagation();
+ let shift=e.target.closest("[data-calendar-shift]");
+ if(shift){calendarMonth+=Number(shift.dataset.calendarShift);if(calendarMonth<0){calendarMonth=11;calendarYear--}else if(calendarMonth>11){calendarMonth=0;calendarYear++}renderCalendar();return}
+ let date=e.target.closest("[data-calendar-date]");if(date)chooseCalendarDate(date.dataset.calendarDate);
+});
+$("timePickerPopover").addEventListener("click",e=>{
+ e.stopPropagation();
+ let hour=e.target.closest("[data-time-hour]"),minute=e.target.closest("[data-time-minute]"),period=e.target.closest("[data-time-period]");
+ if(hour)timePickerSelection.hour=Number(hour.dataset.timeHour);
+ if(minute)timePickerSelection.minute=Number(minute.dataset.timeMinute);
+ if(period)timePickerSelection.period=period.dataset.timePeriod;
+ if(hour||minute||period){updateTimePickerValue();renderTimePicker();centerTimePickerSelections();return}
+ if(e.target.closest("[data-time-done]")){closeTimePicker();$("reminderTimeDisplay").focus()}
+});
+document.addEventListener("click",e=>{
+ let timeTrigger=e.target.closest("#reminderTimeDisplay");
+ if(timeTrigger){openTimePicker();return}
+ if(!$("timePickerPopover").contains(e.target))closeTimePicker();
+ let input=e.target.closest(".date-input-wrap input");
+ if(input){openCalendar(input);return}
+ if($("calendarPopover").contains(e.target))return;
+ closeCalendar();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("timePickerPopover").classList.contains("hidden")){closeTimePicker();$("reminderTimeDisplay").focus()}});
+window.addEventListener("resize",()=>{closeCalendar();closeTimePicker()});
+["entrySearch","entryDateFilter"].forEach(id=>$(id).addEventListener("input",renderEntries));
+$("clearEntryFilters").onclick=()=>{$("entrySearch").value="";$("entryDateFilter").value="";renderEntries()};
+$("dateFilter").onchange=e=>{selected.date=e.target.value;period=selected.date?"custom":"month";document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x.dataset.period===period));if(selected.date){let date=new Date(selected.date+"T12:00:00");selected.year=date.getFullYear();selected.month=date.getMonth()+1}render()};
+document.addEventListener("click",e=>{
+ let closer=e.target.closest("[data-close-modal]");
+ if(closer){let backdrop=closer.closest(".modal-backdrop");if(backdrop.id==="removeItemModal")closeRemoveItemModal();else backdrop.classList.add("hidden")}
+ if(e.target.classList.contains("modal-backdrop")){if(e.target.id==="removeItemModal")closeRemoveItemModal();else e.target.classList.add("hidden")}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeCalendar();if(!$("removeItemModal").classList.contains("hidden"))closeRemoveItemModal();document.querySelectorAll(".modal-backdrop:not(.hidden)").forEach(m=>m.classList.add("hidden"))}});
+$("itemForm").addEventListener("submit",e=>{e.preventDefault();let name=$("newExpenseItem").value.trim(),note=$("newItemName").value.trim(),tg=Number($("newItemTarget").value);if(!name)return;let item=state.items.find(i=>i.name.trim().toLowerCase()===name.toLowerCase());if(!item){item={id:uid(),name,builtIn:false};state.items.push(item)}if(note)item.note=note;setTarget(item.id,tg);$("newExpenseItem").value="";$("newItemName").value="";$("newItemTarget").value="";render();toast("Saved")});
+$("renameItemInput").addEventListener("input",e=>e.target.setCustomValidity(""));
+$("renameItemForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ let item=state.items.find(i=>i.id===$("renameItemForm").dataset.itemId),input=$("renameItemInput"),name=input.value.trim();
+ if(!item)return;
+ if(!name){input.setCustomValidity("Enter an item name.");input.reportValidity();return}
+ input.setCustomValidity("");
+ if(state.items.some(i=>i.id!==item.id&&i.name.toLowerCase()===name.toLowerCase())){toast("This item already exists");input.focus();input.select();return}
+ if(item.name===name){$("renameItemModal").classList.add("hidden");return}
+ let previousName=item.name;item.name=name;
+ if(!save()){item.name=previousName;return}
+ $("renameItemModal").classList.add("hidden");$("renameItemForm").removeAttribute("data-item-id");render();notifyUser("Expense item renamed",`The category is now named ${name}.`);
+});
+$("notificationsToggle").addEventListener("change",async e=>{
+ if(!e.target.checked){state.settings.notificationsEnabled=false;save();return}
+ if(!("Notification"in window)){e.target.checked=false;toast("Browser notifications are not supported here");return}
+ try{
+  let permission=Notification.permission;
+  if(permission==="default")permission=await Notification.requestPermission();
+  if(permission!=="granted"){e.target.checked=false;state.settings.notificationsEnabled=false;save();toast(permission==="denied"?"Browser notifications are blocked. Change this in your browser settings.":"Browser notification permission was not granted.");return}
+  state.settings.notificationsEnabled=true;save();toast("Browser notifications enabled");
+ }catch(error){console.warn("Could not request browser notification permission.",error);e.target.checked=false;state.settings.notificationsEnabled=false;save();toast("Could not enable browser notifications")}
+});
+$("soundToggle").addEventListener("change",async e=>{state.settings.soundEnabled=e.target.checked;save();if(e.target.checked&&!await prepareAlertAudio()){e.target.checked=false;state.settings.soundEnabled=false;save();return}toast(e.target.checked?"Alert sounds enabled":"Alert sounds disabled")});
+$("soundPreview").onclick=playAlertSound;
+$("reminderFrequency").addEventListener("change",updateReminderFrequencyFields);
+$("reminderTitle").addEventListener("input",e=>e.target.setCustomValidity(""));
+$("reminderForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ let existing=state.settings.reminders.find(item=>item.id===editingReminderId),startDate=$("reminderDate").value,title=$("reminderTitle").value.trim(),reminder={id:editingReminderId||uid(),type:existing?.type||"daily-entry",title,message:title,startDate,frequency:$("reminderFrequency").value,time:$("reminderTime").value,weekday:Number($("reminderWeekday").value),monthday:existing?.monthday||Number(startDate.slice(8,10)),enabled:existing?.enabled??true,lastFiredKey:existing?.lastFiredKey||""};
+ if(!reminder.title){$("reminderTitle").setCustomValidity("Enter a reminder title.");$("reminderTitle").reportValidity();return}
+ if(!reminder.time||!reminder.startDate)return;
+ if(editingReminderId){state.settings.reminders=state.settings.reminders.map(item=>item.id===editingReminderId?reminder:item);notifyUser(reminderTitle(reminder),"",{displayDateTime:`${fmtDate(reminder.startDate)} . ${formatReminderTime(reminder.time)}`})}
+ else{state.settings.reminders.push(reminder);toast("Your new reminder has been saved.")}
+ save();resetReminderForm();renderReminders();
+});
+ $("cancelReminderEdit").onclick=resetReminderForm;
+$("clearNotifications").onclick=()=>{state.notifications=[];save();renderNotifications();toast("Notifications cleared");$("notificationsModal").classList.add("hidden")};
+cleanupExpiredNotifications();resetReminderForm();renderNotifications();renderReminders();
+checkDueReminders();setInterval(checkDueReminders,30000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkDueReminders()});
+document.addEventListener("click",e=>{
+ let markRead=e.target.closest("[data-mark-notification-read]");
+ if(markRead){let notification=state.notifications.find(item=>item.id===markRead.dataset.markNotificationRead);if(notification?.unread){notification.read=true;notification.unread=false;notification.readAt=new Date().toISOString();if(!save()){notification.read=false;notification.unread=true;notification.readAt=null}renderNotifications()}return}
+ let b=e.target.closest("[data-tab]");if(b)setTab(b.dataset.tab);
+ let go=e.target.closest("[data-goto]");if(go)setTab(go.dataset.goto);
+ let edit=e.target.closest("[data-edit]");if(edit){let en=state.entries.find(x=>x.id===edit.dataset.edit);if(en)openEditor(en.itemId,en.date)}
+ let del=e.target.closest("[data-delete]");if(del&&confirm(alertText("Delete this expense entry?"))){let deleted=state.entries.find(x=>x.id===del.dataset.delete);state.entries=state.entries.filter(x=>x.id!==del.dataset.delete);save();render();notifyUser("Expense deleted",`The ${deleted?money(deleted.amount)+" expense":"expense"} was deleted.`)}
+ let saveTarget=e.target.closest("[data-save-target]");if(saveTarget){let input=saveTarget.parentElement.querySelector("[data-target-item]");if(!input.checkValidity()){input.reportValidity();return}let itemId=saveTarget.dataset.saveTarget;setTarget(itemId,input.value);render();toast("Saved");setTimeout(showBudgetAlert,50)}
+ let editName=e.target.closest("[data-edit-item-name]");if(editName){let item=state.items.find(i=>i.id===editName.dataset.editItemName);if(item){$("renameItemTitle").textContent=item.name;$("renameItemInput").value=item.name;$("renameItemInput").setCustomValidity("");$("renameItemForm").dataset.itemId=item.id;$("renameItemModal").classList.remove("hidden");$("renameItemInput").focus();$("renameItemInput").select()}}
+ let cancelRemove=e.target.closest("[data-cancel-remove-item]");if(cancelRemove){closeRemoveItemModal();return}
+ let rem=e.target.closest("[data-remove-item]");if(rem){let item=state.items.find(value=>value.id===rem.dataset.removeItem);if(item){pendingRemovalItemId=item.id;$("removeItemMessage").textContent=`Are you sure you want to remove "${item.name}"? This action cannot be undone. Past expense records will remain in your data but won't be included in item totals.`;$("removeItemModal").classList.remove("hidden");$("removeItemModal").querySelector("[data-cancel-remove-item]").focus()}}
+ let editReminder=e.target.closest("[data-edit-reminder]");if(editReminder){let reminder=state.settings.reminders.find(item=>item.id===editReminder.dataset.editReminder);if(reminder){editingReminderId=reminder.id;$("reminderTitle").value=reminderTitle(reminder);$("reminderDate").value=reminder.startDate||dateKey(today.getFullYear(),today.getMonth()+1,today.getDate());$("reminderFrequency").value=reminder.frequency;$("reminderTime").value=reminder.time;$("reminderWeekday").value=String(reminder.weekday??1);$("saveReminder").textContent="Save Changes";$("cancelReminderEdit").classList.remove("hidden");updateReminderFrequencyFields();$("reminderTitle").focus()}}
+ let deleteReminder=e.target.closest("[data-delete-reminder]");if(deleteReminder){state.settings.reminders=state.settings.reminders.filter(item=>item.id!==deleteReminder.dataset.deleteReminder);if(editingReminderId===deleteReminder.dataset.deleteReminder)resetReminderForm();save();renderReminders();notifyUser("Reminder removed","The reminder was removed.")}
+ let mc=e.target.closest("[data-mobile-cell]");if(mc)openEditor(mc.dataset.mobileCell,dateKey(selected.year,selected.month,+mc.dataset.day));
+});
+$("confirmRemoveItem").addEventListener("click",confirmRemoveItem);
+document.addEventListener("keydown",e=>{
+ if(e.key==="Enter"&&e.target.matches("[data-target-item]")){e.preventDefault();e.target.closest(".target-control").querySelector("[data-save-target]").click()}
+});
+document.addEventListener("change",e=>{
+ if(e.target.matches("[data-cell-item]")){let id=e.target.dataset.cellItem,date=e.target.dataset.cellDate,val=Number(e.target.value);state.entries=state.entries.filter(x=>!(x.itemId===id&&x.date===date));if(val>0)state.entries.push({id:uid(),itemId:id,date,amount:val,note:""});save();render();toast("Saved");setTimeout(showBudgetAlert,50)}
+});
+$("yearFilter").onchange=e=>{selected.year=+e.target.value;selected.date="";period="month";document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x.dataset.period==="month"));render()};
+$("monthFilter").onchange=e=>{selected.month=+e.target.value;selected.date="";period="month";document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x.dataset.period==="month"));render()};
+$("itemFilter").onchange=e=>{selected.item=e.target.value;render()};
+$("todayBtn").onclick=()=>{selected.year=today.getFullYear();selected.month=today.getMonth()+1;selected.item="all";selected.date="";period="month";document.querySelectorAll("[data-period]").forEach(x=>x.classList.toggle("active",x.dataset.period==="month"));render()};
+$("exportCsv").onclick=()=>{
+ try{
+  let rows=[["Date","Year","Month","Expense item","Amount (INR)","Note"]];
+  state.entries.filter(e=>{let d=e.date;return (!selected.date||e.date===selected.date)&&+d.slice(0,4)===selected.year&&+d.slice(5,7)===selected.month&&(selected.item==="all"||e.itemId===selected.item)}).forEach(e=>rows.push([fmtDate(e.date),selected.year,months[selected.month-1],state.items.find(i=>i.id===e.itemId)?.name||"Removed item",e.amount,e.note||""]));
+  let csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  download(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),`Pocketa_${selected.year}_${String(selected.month).padStart(2,"0")}.csv`);toast("CSV exported");
+ }catch(error){console.error("Could not export expense records.",error);toast("Could not export CSV")}
+};
+function download(blob,name){let a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$("backupBtn").onclick=()=>{try{download(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),`Pocketa_Backup_${new Date().toISOString().slice(0,10)}.json`);toast("Data backup exported")}catch(error){console.error("Could not export the data backup.",error);toast("Could not export data backup")}};
+$("restoreFile").onchange=async e=>{
+ let f=e.target.files[0];if(!f)return;
+ try{
+  let data=JSON.parse(await f.text());
+  if(!Array.isArray(data.items)||!Array.isArray(data.entries)||!data.targets||typeof data.targets!=="object")throw Error("Invalid backup structure");
+  if(confirm(alertText("Restore this backup? It will replace the data currently saved in this browser."))){
+   let previousState=state;
+   state={...data,settings:{notificationsEnabled:false,soundEnabled:false,reminders:[],...data.settings},notifications:Array.isArray(data.notifications)?data.notifications.filter(notification=>notification&&typeof notification==="object").map(normalizeNotification).filter(notification=>Date.parse(notification.expiresAt)>Date.now()):[]};
+   state.items=state.items.map(item=>({...item,builtIn:item.builtIn===true||defaults.includes(item.name)}));
+   if(!Array.isArray(state.settings.reminders))state.settings.reminders=[];
+   if(!save()){state=previousState;render()}
+   else{render();renderReminders();renderNotifications();$("notificationsToggle").checked=state.settings.notificationsEnabled;$("soundToggle").checked=state.settings.soundEnabled;notifyUser("Backup restored","Your local backup has been restored.")}
+  }
+ }catch(err){console.error("Could not restore the selected backup.",err);toast("This backup file is not valid.")}
+ e.target.value="";
+};
+$("restoreBtn").onclick=()=>$("restoreFile").click();
+$("expenseDate").value=dateKey(currentYear,currentMonth,today.getDate());
+fillFilters();render();showBudgetAlert();
+if(storageLoadError)toast("Saved data could not be read. A new local data set was started.");
+})();
+</script>
+</body>
+</html>
