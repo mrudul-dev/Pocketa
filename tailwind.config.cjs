@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["./Pocketa.html"],
+  content: ["./VaultiqFlow.html"],
   corePlugins: {
     preflight: false
   },

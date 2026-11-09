@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#101827">
-<title>Pocketa . Expense Tracker</title>
+<title>VaultiqFlow . Expense Tracker</title>
+<link rel="icon" type="image/svg+xml" href="image/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,6 +13,8 @@
 <link rel="stylesheet" href="tailwind.css">
 <link rel="stylesheet" href="date-time-picker.css">
 <style>
+.logo{position:relative}
+.logo-image{height:72%;left:50%;object-fit:contain;position:absolute;top:50%;transform:translate(-50%,-50%);width:72%}
 .note-input{color-scheme:dark}
 .note-field{position:relative}
 .note-field:focus-within{z-index:30}
@@ -26,7 +29,7 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><div class="logo">&#8377;</div><div><h1>Pocketa</h1><p>Your Personal Expense Tracker</p></div></div>
+    <div class="brand"><div class="logo"><img class="logo-image" src="image/logo.svg" alt=""></div><div><h1>VaultiqFlow</h1><p>Your Personal Expense Tracker</p></div></div>
     <div class="top-actions">
       <div class="header-icon-actions gap-1">
         <button class="btn icon-btn notification-trigger" id="remindersBtn" aria-label="Reminders and notifications" title="Reminders and notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span id="notificationBadge" class="notification-badge hidden" aria-live="polite"></span></button>
@@ -117,7 +120,7 @@
       <section class="panel"><div class="panel-head"><div><h2>Expense item report</h2><div class="sub">Spending by item for the selected year</div></div></div><div id="itemReport"></div></section>
     </section>
   </main>
-  <div class="footer">Pocketa . Data is saved in this browser on this device. Export a backup regularly.</div>
+  <div class="footer">VaultiqFlow . Data is saved in this browser on this device. Export a backup regularly.</div>
 </div>
 
 <div id="filterModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="filterModalTitle">
@@ -245,7 +248,7 @@ const monthKey=(y,m)=>`${y}-${String(m).padStart(2,"0")}`;
 const uid=()=>Math.random().toString(36).slice(2,10);
 const defaults=["Groceries","Food & Dining","Fuel / Transport","Bills & Utilities","Rent / House","Shopping","Health","Family","Entertainment","Other"],categoryColors=["#36ddb8","#70a9ff","#f5bd61","#b78cff","#ff8b72","#64c9eb","#fa8ca8","#a7d96c"];
 let state,storageLoadError=null;
-try{state=JSON.parse(localStorage.getItem("Pocketa_v1"))}catch(error){storageLoadError=error}
+try{state=JSON.parse(localStorage.getItem("VaultiqFlow_v1"))}catch(error){storageLoadError=error}
 if(!state||!Array.isArray(state.items)) state={items:defaults.map(name=>({id:uid(),name,builtIn:true})),targets:{},entries:[]};
 state.items=state.items.map(item=>({...item,builtIn:item.builtIn===true||defaults.includes(item.name)}));
 if(!state.targets)state.targets={};if(!Array.isArray(state.entries))state.entries=[];
@@ -259,7 +262,7 @@ const legacyReminderNotificationsPresent=state.notifications.some(notification=>
 state.notifications=state.notifications.filter(notification=>notification&&typeof notification==="object").map(normalizeNotification).filter(notification=>!(notification.title?.trim().toLowerCase()==="reminder added"||notification.title?.trim().toLowerCase()==="reminder updated"&&notification.message?.trim().toLowerCase()==="your reminder settings were updated."));
 let selected={year:currentYear,month:currentMonth,item:"all",date:""}, editing=null, activeTab="overview", period="month",lastBudgetAlertKey="";
 let calendarInput=null,calendarYear=currentYear,calendarMonth=currentMonth-1,editingReminderId=null,pendingDelete=null,lastObservedLocalDate=localDateKey(new Date());
-const save=()=>{try{localStorage.setItem("Pocketa_v1",JSON.stringify(state));return true}catch(error){console.error("Could not save Pocketa data locally.",error);toast("Could not save data on this device. Check available storage.");return false}};
+const save=()=>{try{localStorage.setItem("VaultiqFlow_v1",JSON.stringify(state));return true}catch(error){console.error("Could not save VaultiqFlow data locally.",error);toast("Could not save data on this device. Check available storage.");return false}};
 function rememberNote(note){
  note=String(note||"").trim();if(!note)return;
  let key=note.toLowerCase();
@@ -740,11 +743,11 @@ $("exportCsv").onclick=()=>{
   let rows=[["Date","Year","Month","Expense item","Amount (INR)","Note"]];
   state.entries.filter(e=>{let d=e.date;return (!selected.date||e.date===selected.date)&&+d.slice(0,4)===selected.year&&+d.slice(5,7)===selected.month&&(selected.item==="all"||e.itemId===selected.item)}).forEach(e=>rows.push([fmtDate(e.date),selected.year,months[selected.month-1],state.items.find(i=>i.id===e.itemId)?.name||"Removed item",e.amount,e.note||""]));
   let csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\r\n");
-  download(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),`Pocketa_${selected.year}_${String(selected.month).padStart(2,"0")}.csv`);toast("CSV exported");
+  download(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}),`VaultiqFlow_${selected.year}_${String(selected.month).padStart(2,"0")}.csv`);toast("CSV exported");
  }catch(error){console.error("Could not export expense records.",error);toast("Could not export CSV")}
 };
 function download(blob,name){let a=document.createElement("a"),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$("backupBtn").onclick=()=>{try{download(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),`Pocketa_Backup_${new Date().toISOString().slice(0,10)}.json`);toast("Data backup exported")}catch(error){console.error("Could not export the data backup.",error);toast("Could not export data backup")}};
+$("backupBtn").onclick=()=>{try{download(new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),`VaultiqFlow_Backup_${new Date().toISOString().slice(0,10)}.json`);toast("Data backup exported")}catch(error){console.error("Could not export the data backup.",error);toast("Could not export data backup")}};
 $("restoreFile").onchange=async e=>{
  let f=e.target.files[0];if(!f)return;
  try{
