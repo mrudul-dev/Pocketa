@@ -222,6 +222,7 @@
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
+<audio id="alertAudio" src="music/alert.mp3" preload="auto"></audio>
 <div id="calendarPopover" class="calendar-popover hidden" role="dialog" aria-label="Choose a date"></div>
 <div id="timePickerPopover" class="time-picker-popover hidden" role="dialog" aria-label="Choose a reminder time"></div>
 
@@ -244,7 +245,6 @@ const monthKey=(y,m)=>`${y}-${String(m).padStart(2,"0")}`;
 const uid=()=>Math.random().toString(36).slice(2,10);
 const defaults=["Groceries","Food & Dining","Fuel / Transport","Bills & Utilities","Rent / House","Shopping","Health","Family","Entertainment","Other"],categoryColors=["#36ddb8","#70a9ff","#f5bd61","#b78cff","#ff8b72","#64c9eb","#fa8ca8","#a7d96c"];
 let state,storageLoadError=null;
-let audioContext=null;
 try{state=JSON.parse(localStorage.getItem("Pocketa_v1"))}catch(error){storageLoadError=error}
 if(!state||!Array.isArray(state.items)) state={items:defaults.map(name=>({id:uid(),name,builtIn:true})),targets:{},entries:[]};
 state.items=state.items.map(item=>({...item,builtIn:item.builtIn===true||defaults.includes(item.name)}));
@@ -284,6 +284,7 @@ function showBudgetAlert(){
  if(key===lastBudgetAlertKey)return;
  lastBudgetAlertKey=key;
  toast(status==="over"?`You Are Over Budget By ${money(amount)}!`:`You Have ${money(amount)} Left From Your Monthly Budget. Please Keep This In Mind Before Making Any New Transactions.`);
+ if(state.settings.soundEnabled)playAlertSound();
 }
 const filteredEntries=()=>state.entries.filter(e=>{let d=new Date(e.date+"T12:00:00");return (selected.date?e.date===selected.date:d.getFullYear()===selected.year&&d.getMonth()+1===selected.month)&&(selected.item==="all"||e.itemId===selected.item)});
 const entriesFor=(itemId,y=selected.year,m=selected.month)=>state.entries.filter(e=>e.itemId===itemId&&e.date.startsWith(monthKey(y,m)+"-"));
@@ -323,22 +324,9 @@ function confirmDelete(){
   if(save()){if(editingReminderId===deleted.id)resetReminderForm();renderReminders();notifyUser("Reminder removed","The reminder was removed.")}else state.settings.reminders.splice(index,0,deleted)
  }
 }
-async function prepareAlertAudio(){
- let AudioContextType=window.AudioContext||window.webkitAudioContext;
- if(!AudioContextType){toast("Alert sounds are not supported in this browser");return false}
- try{
-  if(!audioContext||audioContext.state==="closed")audioContext=new AudioContextType();
-  if(audioContext.state==="suspended")await audioContext.resume();
-  return true;
- }catch(error){console.warn("Could not enable alert sounds.",error);toast("Could not enable alert sounds");return false}
-}
 async function playAlertSound(){
- if(!await prepareAlertAudio())return;
  try{
-  let context=audioContext,oscillator=context.createOscillator(),gain=context.createGain();
-  oscillator.type="sine";oscillator.frequency.setValueAtTime(660,context.currentTime);oscillator.frequency.setValueAtTime(880,context.currentTime+.14);
-  gain.gain.setValueAtTime(.0001,context.currentTime);gain.gain.exponentialRampToValueAtTime(.16,context.currentTime+.02);gain.gain.exponentialRampToValueAtTime(.0001,context.currentTime+.34);
-  oscillator.connect(gain);gain.connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+.36);
+  let audio=$("alertAudio");audio.currentTime=0;await audio.play();
  }catch(error){console.warn("Could not play the alert sound.",error);toast("Could not play the alert sound")}
 }
 function notifyUser(title,message,{sound=false,scheduledDate=localDateKey(new Date()),displayDateTime=""}={}){
@@ -703,7 +691,7 @@ $("notificationsToggle").addEventListener("change",async e=>{
   state.settings.notificationsEnabled=true;save();toast("Browser notifications enabled");
  }catch(error){console.warn("Could not request browser notification permission.",error);e.target.checked=false;state.settings.notificationsEnabled=false;save();toast("Could not enable browser notifications")}
 });
-$("soundToggle").addEventListener("change",async e=>{state.settings.soundEnabled=e.target.checked;save();if(e.target.checked&&!await prepareAlertAudio()){e.target.checked=false;state.settings.soundEnabled=false;save();return}toast(e.target.checked?"Alert sounds enabled":"Alert sounds disabled")});
+$("soundToggle").addEventListener("change",e=>{state.settings.soundEnabled=e.target.checked;save();toast(e.target.checked?"Alert sounds enabled":"Alert sounds disabled")});
 $("soundPreview").onclick=playAlertSound;
 $("reminderFrequency").addEventListener("change",updateReminderFrequencyFields);
 $("reminderTitle").addEventListener("input",e=>e.target.setCustomValidity(""));
