@@ -531,8 +531,7 @@ function renderReports(){
  $("itemReport").innerHTML=`<div class="table-wrap"><table><thead><tr><th>Expense item</th><th>Yearly target</th><th>Yearly spent</th><th>Extra across months</th></tr></thead><tbody>${scopedItems().map(i=>{let tg=sum(Array.from({length:12},(_,j)=>j+1),m=>target(i.id,ys,m)),sp=sum(Array.from({length:12},(_,j)=>j+1),m=>totalFor(i.id,ys,m)),ex=sum(Array.from({length:12},(_,j)=>j+1),m=>extraFor(i.id,ys,m));return `<tr><td><strong>${esc(i.name)}</strong></td><td>${money(tg)}</td><td>${money(sp)}</td><td style="color:${ex?"var(--red)":"var(--green)"};font-weight:750">${money(ex)}</td></tr>`}).join("")}</tbody></table></div>`;
 }
 function addEntry(date,itemId,amount,note){
- let existing=state.entries.find(e=>e.date===date&&e.itemId===itemId&&e.note===(note||""));
- if(existing){existing.amount=Number(amount)}else state.entries.push({id:uid(),date,itemId,amount:Number(amount),note:note||""});
+ state.entries.push({id:uid(),date,itemId,amount:Number(amount),note:note||""});
  rememberNote(note);
  save();render();toast("Saved");setTimeout(showBudgetAlert,50);
 }
