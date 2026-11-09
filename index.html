@@ -20,7 +20,7 @@
 .note-suggestion-option{background:transparent;border:0;border-radius:0;color:#e9e9ec;cursor:pointer;display:block;font-size:13px;padding:10px 12px;text-align:left;width:100%}
 .note-suggestion-option:hover,.note-suggestion-option:focus{background:#29292d;color:#fff;outline:none}
 #itemForm.form-grid{grid-template-columns:minmax(0,1.8fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,.8fr)}
-@media(max-width:700px){#itemForm.form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#itemForm.form-grid button[type=submit]{grid-column:1/-1}}
+@media(max-width:700px){#itemForm.form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#itemForm.form-grid .field:first-child,#itemForm.form-grid button[type=submit]{grid-column:1/-1}#itemForm.form-grid .field:nth-child(2){grid-column:1}#itemForm.form-grid .field:nth-child(3){grid-column:2}}
 </style>
 </head>
 <body>
